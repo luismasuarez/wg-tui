@@ -1,50 +1,58 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!-- Sync Impact Report
+Version change: 0.0.0 → 1.0.0
+Added sections: Core Principles, Constraints, Governance
+Modified principles: (initial — no prior version)
+Templates requiring updates:
+  ✅ constitution.md populated
+  ✅ No placeholder tokens remaining
+Follow-up TODOs: none
+-->
+
+# wg-tui Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Go Idiomático
+El código DEBE seguir las convenciones estándar de Go: interfaces pequeñas, composición
+sobre herencia, manejo explícito de errores, sin magia ni reflexión innecesaria.
+Dependencias externas al sistema operativo DEBEN ser mínimas y justificadas.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Binario Único
+El artefacto final DEBE ser un binario estático compilado sin dependencias de runtime
+externas al sistema. Toda lógica se compila dentro del binario. La distribución se
+realiza vía un script `curl | sh` que descarga y coloca el binario en `$PATH`.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. UX Minimalista
+La interfaz DEBE ser directa y operable con el teclado únicamente. Cero configuración
+requerida para el primer uso. El tiempo desde invocación hasta primera acción DEBE
+ser inferior a 1 segundo en hardware normal.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Privilegios Mínimos
+El binario NO DEBE requerir `sudo` para operaciones de lectura (listar, ver estado).
+`sudo` o permisos elevados SOLO se permiten cuando NetworkManager lo exija
+explícitamente para conectar/desconectar. Se documenta cada caso que lo requiera.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Compatibilidad Linux + NetworkManager
+El backend DEBE usar exclusivamente `nmcli` como interfaz con NetworkManager.
+Compatible con cualquier distribución Linux que tenga NetworkManager ≥ 1.2.
+Sin dependencias de APIs específicas de Ubuntu o GNOME.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Lenguaje: Go 1.21+
+- TUI framework: Bubble Tea (charmbracelet/bubbletea)
+- Backend: `nmcli` (no wg-tools directamente, no netlink)
+- QR codes: librería Go pura (no shell a `qrencode`)
+- Tests: unitarios para lógica de parsing de `nmcli`; integración marcada con build tag `integration`
+- Sin archivos de configuración propios; estado leído siempre desde NetworkManager
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Esta constitución rige todas las decisiones de diseño e implementación del proyecto.
+Cualquier desviación DEBE documentarse con justificación explícita en el PR correspondiente.
+Enmiendas requieren actualizar este archivo con incremento de versión semántica:
+- MAJOR: remoción o redefinición incompatible de un principio
+- MINOR: adición de principio o sección
+- PATCH: clarificaciones y correcciones de redacción
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-04-16 | **Last Amended**: 2026-04-16
