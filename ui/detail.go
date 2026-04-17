@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -35,13 +36,25 @@ func renderDetail(m Model) string {
 		field("RX:", formatBytes(c.RxBytes))
 		field("TX:", formatBytes(c.TxBytes))
 		if !c.LastHandshake.IsZero() {
-			field("Último handshake:", c.LastHandshake.Format("2006-01-02 15:04:05"))
+			field("Último handshake:", relativeTime(c.LastHandshake))
 		}
 	}
 
 	sb.WriteString("\n" + styleDim.Render("esc volver  q QR"))
 
 	return lipgloss.NewStyle().Padding(1, 2).Render(sb.String())
+}
+
+func relativeTime(t time.Time) string {
+	d := time.Since(t).Round(time.Second)
+	switch {
+	case d < time.Minute:
+		return fmt.Sprintf("hace %ds", int(d.Seconds()))
+	case d < time.Hour:
+		return fmt.Sprintf("hace %dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+	default:
+		return fmt.Sprintf("hace %dh %dm", int(d.Hours()), int(d.Minutes())%60)
+	}
 }
 
 func formatBytes(b int64) string {
@@ -76,7 +89,9 @@ func renderQR(m Model) string {
 	var sb strings.Builder
 	sb.WriteString(styleTitle.Render("QR — escanear con WireGuard") + "\n\n")
 	qr := generateQR(m.qrText)
-	sb.WriteString(qr + "\n")
+	sb.WriteString(qr + "\n\n")
+	sb.WriteString(styleDim.Render("── config ──") + "\n")
+	sb.WriteString(styleDim.Render(m.qrText) + "\n")
 	sb.WriteString(styleDim.Render("esc volver"))
 	return lipgloss.NewStyle().Padding(1, 2).Render(sb.String())
 }

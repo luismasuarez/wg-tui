@@ -27,22 +27,32 @@ type connectResultMsg struct{ err error }
 type disconnectResultMsg struct{ err error }
 type addResultMsg struct{ err error }
 type deleteResultMsg struct{ err error }
-type refreshMsg struct{ conns []nmcli.Connection; err error }
-type detailMsg struct{ conn nmcli.Connection; err error }
+type refreshMsg struct {
+	conns []nmcli.Connection
+	err   error
+}
+type detailMsg struct {
+	conn nmcli.Connection
+	err  error
+}
+
+var spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 // Model is the root Bubble Tea model.
 type Model struct {
-	conns    []nmcli.Connection
-	cursor   int
-	view     viewState
-	detail   nmcli.Connection
-	status   string
-	statusOK bool
-	width    int
-	height   int
-	form     FormModel
-	showHelp bool
-	qrText   string
+	conns       []nmcli.Connection
+	cursor      int
+	view        viewState
+	detail      nmcli.Connection
+	status      string
+	statusOK    bool
+	busy        bool
+	spinnerIdx  int
+	width       int
+	height      int
+	form        FormModel
+	showHelp    bool
+	qrText      string
 }
 
 var (
@@ -69,6 +79,12 @@ func tick() tea.Cmd {
 	})
 }
 
+func spinTick() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -81,6 +97,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tickMsg:
+		if m.busy {
+			m.spinnerIdx = (m.spinnerIdx + 1) % len(spinner)
+			return m, spinTick()
+		}
 		return m, tea.Batch(tick(), doRefresh())
 
 	case refreshMsg:
@@ -93,6 +113,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case connectResultMsg:
+		m.busy = false
 		if msg.err != nil {
 			m.status = "Error: " + msg.err.Error()
 			m.statusOK = false
@@ -103,6 +124,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, doRefresh()
 
 	case disconnectResultMsg:
+		m.busy = false
 		if msg.err != nil {
 			m.status = "Error: " + msg.err.Error()
 			m.statusOK = false
@@ -200,20 +222,24 @@ func (m Model) handleListKey(key string) (tea.Model, tea.Cmd) {
 		if len(m.conns) > 0 && !m.conns[m.cursor].Active {
 			m.status = "Conectando…"
 			m.statusOK = true
+			m.busy = true
 			name := m.conns[m.cursor].Name
-			return m, func() tea.Msg {
+			return m, tea.Batch(spinTick(), func() tea.Msg {
 				return connectResultMsg{nmcli.Connect(name)}
-			}
+			})
 		}
 	case "d":
 		if len(m.conns) > 0 && m.conns[m.cursor].Active {
 			m.status = "Desconectando…"
 			m.statusOK = true
+			m.busy = true
 			name := m.conns[m.cursor].Name
-			return m, func() tea.Msg {
+			return m, tea.Batch(spinTick(), func() tea.Msg {
 				return disconnectResultMsg{nmcli.Disconnect(name)}
-			}
+			})
 		}
+	case "r":
+		return m, doRefresh()
 	case "i":
 		if len(m.conns) > 0 {
 			name := m.conns[m.cursor].Name

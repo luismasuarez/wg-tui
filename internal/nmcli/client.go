@@ -20,6 +20,16 @@ type Connection struct {
 	LastHandshake time.Time
 	RxBytes       int64
 	TxBytes       int64
+	AllPeers      []Peer
+}
+
+// Peer represents a single WireGuard peer from `wg show`.
+type Peer struct {
+	PublicKey     string
+	Endpoint      string
+	LastHandshake time.Time
+	RxBytes       int64
+	TxBytes       int64
 }
 
 // CheckPrerequisites returns an error if nmcli is unavailable or NetworkManager is not running.
@@ -117,16 +127,17 @@ func enrichFromWg(c *Connection) {
 }
 
 func parseWgShow(c *Connection, output string) {
-	var inPeer bool
+	var current *Peer
 	for _, line := range strings.Split(output, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "interface:") {
-			inPeer = false
+			current = nil
 			continue
 		}
 		if strings.HasPrefix(line, "peer:") {
-			inPeer = true
-			c.PeerPublicKey = strings.TrimSpace(strings.TrimPrefix(line, "peer:"))
+			p := Peer{PublicKey: strings.TrimSpace(strings.TrimPrefix(line, "peer:"))}
+			c.AllPeers = append(c.AllPeers, p)
+			current = &c.AllPeers[len(c.AllPeers)-1]
 			continue
 		}
 		k, v, ok := strings.Cut(line, ":")
@@ -135,7 +146,7 @@ func parseWgShow(c *Connection, output string) {
 		}
 		k = strings.TrimSpace(k)
 		v = strings.TrimSpace(v)
-		if !inPeer {
+		if current == nil {
 			if k == "public key" {
 				c.PublicKey = v
 			}
@@ -143,13 +154,20 @@ func parseWgShow(c *Connection, output string) {
 		}
 		switch k {
 		case "endpoint":
-			c.Endpoint = v
+			current.Endpoint = v
 		case "latest handshake":
-			// store raw string — display as-is
-			c.LastHandshake = parseHandshake(v)
+			current.LastHandshake = parseHandshake(v)
 		case "transfer":
-			parseTransfer(c, v)
+			parseTransferInto(&current.RxBytes, &current.TxBytes, v)
 		}
+	}
+	// populate top-level fields from first peer for backward compat
+	if len(c.AllPeers) > 0 {
+		c.PeerPublicKey = c.AllPeers[0].PublicKey
+		c.Endpoint = c.AllPeers[0].Endpoint
+		c.LastHandshake = c.AllPeers[0].LastHandshake
+		c.RxBytes = c.AllPeers[0].RxBytes
+		c.TxBytes = c.AllPeers[0].TxBytes
 	}
 }
 
@@ -183,13 +201,16 @@ func parseHandshake(s string) time.Time {
 	return time.Now().Add(-total)
 }
 
-func parseTransfer(c *Connection, s string) {
-	// "81.45 MiB received, 6.00 MiB sent"
+func parseTransferInto(rx, tx *int64, s string) {
 	var rxVal, txVal float64
 	var rxUnit, txUnit string
 	fmt.Sscanf(s, "%f %s received, %f %s sent", &rxVal, &rxUnit, &txVal, &txUnit)
-	c.RxBytes = toBytes(rxVal, rxUnit)
-	c.TxBytes = toBytes(txVal, txUnit)
+	*rx = toBytes(rxVal, rxUnit)
+	*tx = toBytes(txVal, txUnit)
+}
+
+func parseTransfer(c *Connection, v string) {
+	parseTransferInto(&c.RxBytes, &c.TxBytes, v)
 }
 
 func toBytes(val float64, unit string) int64 {

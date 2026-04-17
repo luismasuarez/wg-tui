@@ -37,7 +37,11 @@ func renderList(m Model) string {
 		if !m.statusOK {
 			st = styleError
 		}
-		sb.WriteString(st.Render(m.status) + "\n")
+		prefix := ""
+		if m.busy {
+			prefix = spinner[m.spinnerIdx] + " "
+		}
+		sb.WriteString(st.Render(prefix+m.status) + "\n")
 	}
 
 	if m.showHelp {

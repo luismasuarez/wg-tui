@@ -18,6 +18,7 @@ var helpKeys = []struct{ key, desc string }{
 	{"q", "QR"},
 	{"a", "agregar"},
 	{"x", "eliminar"},
+	{"r", "refrescar"},
 	{"?", "ayuda"},
 	{"ctrl+c", "salir"},
 }
