@@ -61,11 +61,8 @@ func TestParseConnections(t *testing.T) {
 func TestParseDetails(t *testing.T) {
 	input := `GENERAL.NAME:RouterOS
 GENERAL.STATE:100 (activated)
-GENERAL.IP-IFACE:wg0
-IP4.ADDRESS[1]:10.0.0.2/24
-wireguard.public-key:abc123==
-wireguard.peers[1].endpoint:vpn.example.com:51820
-wireguard.peers[1].public-key:srv456==
+GENERAL.IP-IFACE:RouterOS
+IP4.ADDRESS[1]:10.10.20.5/32
 `
 	c := parseDetails("RouterOS", input)
 	if c.Name != "RouterOS" {
@@ -74,13 +71,45 @@ wireguard.peers[1].public-key:srv456==
 	if !c.Active {
 		t.Error("Active should be true")
 	}
-	if c.Interface != "wg0" {
+	if c.Interface != "RouterOS" {
 		t.Errorf("Interface = %q", c.Interface)
 	}
-	if c.AssignedIP != "10.0.0.2/24" {
+	if c.AssignedIP != "10.10.20.5/32" {
 		t.Errorf("AssignedIP = %q", c.AssignedIP)
 	}
-	if c.Endpoint != "vpn.example.com:51820" {
+}
+
+func TestParseWgShow(t *testing.T) {
+	input := `interface: RouterOS
+  public key: Oq7udzct5y+/KBauXAb3t+CLxSnM668004k6ymS/+wM=
+  private key: (hidden)
+  listening port: 51820
+
+peer: EfVhhGXkkwHwMrfFSq2oZ+X1ITVlR/4+6YuaD+pNpz0=
+  endpoint: 72.61.0.249:51822
+  allowed ips: 0.0.0.0/0
+  latest handshake: 1 minute, 41 seconds ago
+  transfer: 81.45 MiB received, 6.00 MiB sent
+`
+	c := &Connection{}
+	parseWgShow(c, input)
+
+	if c.PublicKey != "Oq7udzct5y+/KBauXAb3t+CLxSnM668004k6ymS/+wM=" {
+		t.Errorf("PublicKey = %q", c.PublicKey)
+	}
+	if c.PeerPublicKey != "EfVhhGXkkwHwMrfFSq2oZ+X1ITVlR/4+6YuaD+pNpz0=" {
+		t.Errorf("PeerPublicKey = %q", c.PeerPublicKey)
+	}
+	if c.Endpoint != "72.61.0.249:51822" {
 		t.Errorf("Endpoint = %q", c.Endpoint)
+	}
+	if c.RxBytes == 0 {
+		t.Error("RxBytes should be non-zero")
+	}
+	if c.TxBytes == 0 {
+		t.Error("TxBytes should be non-zero")
+	}
+	if c.LastHandshake.IsZero() {
+		t.Error("LastHandshake should be set")
 	}
 }

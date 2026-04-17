@@ -68,12 +68,18 @@ func parseConnections(output string) []Connection {
 }
 
 // GetDetails returns extended details for a named connection.
+// For active connections it enriches data from `wg show`.
 func GetDetails(name string) (Connection, error) {
 	out, err := exec.Command("nmcli", "-t", "connection", "show", name).Output()
 	if err != nil {
 		return Connection{}, fmt.Errorf("nmcli show %q: %w", name, err)
 	}
-	return parseDetails(name, string(out)), nil
+	c := parseDetails(name, string(out))
+
+	if c.Active {
+		enrichFromWg(&c)
+	}
+	return c, nil
 }
 
 func parseDetails(name, output string) Connection {
@@ -91,15 +97,113 @@ func parseDetails(name, output string) Connection {
 			c.Interface = v
 		case "IP4.ADDRESS[1]":
 			c.AssignedIP = v
-		case "wireguard.public-key":
-			c.PublicKey = v
-		case "wireguard.peers[1].endpoint":
-			c.Endpoint = v
-		case "wireguard.peers[1].public-key":
-			c.PeerPublicKey = v
 		}
 	}
 	return c
+}
+
+// enrichFromWg populates peer/traffic fields from `wg show <iface>`.
+func enrichFromWg(c *Connection) {
+	iface := c.Interface
+	if iface == "" {
+		iface = c.Name
+	}
+	out, err := exec.Command("wg", "show", iface).Output()
+	if err != nil {
+		// wg not available or not root — skip silently
+		return
+	}
+	parseWgShow(c, string(out))
+}
+
+func parseWgShow(c *Connection, output string) {
+	var inPeer bool
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "interface:") {
+			inPeer = false
+			continue
+		}
+		if strings.HasPrefix(line, "peer:") {
+			inPeer = true
+			c.PeerPublicKey = strings.TrimSpace(strings.TrimPrefix(line, "peer:"))
+			continue
+		}
+		k, v, ok := strings.Cut(line, ":")
+		if !ok {
+			continue
+		}
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		if !inPeer {
+			if k == "public key" {
+				c.PublicKey = v
+			}
+			continue
+		}
+		switch k {
+		case "endpoint":
+			c.Endpoint = v
+		case "latest handshake":
+			// store raw string — display as-is
+			c.LastHandshake = parseHandshake(v)
+		case "transfer":
+			parseTransfer(c, v)
+		}
+	}
+}
+
+func parseHandshake(s string) time.Time {
+	// `wg show` returns relative strings like "1 minute, 41 seconds ago"
+	// We store a synthetic time by subtracting the duration from now.
+	// Simple parse: look for known units.
+	s = strings.TrimSuffix(s, " ago")
+	var total time.Duration
+	parts := strings.Split(s, ", ")
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		var n int
+		var unit string
+		fmt.Sscanf(p, "%d %s", &n, &unit)
+		unit = strings.TrimSuffix(unit, "s") // plurals
+		switch unit {
+		case "second":
+			total += time.Duration(n) * time.Second
+		case "minute":
+			total += time.Duration(n) * time.Minute
+		case "hour":
+			total += time.Duration(n) * time.Hour
+		case "day":
+			total += time.Duration(n) * 24 * time.Hour
+		}
+	}
+	if total == 0 {
+		return time.Time{}
+	}
+	return time.Now().Add(-total)
+}
+
+func parseTransfer(c *Connection, s string) {
+	// "81.45 MiB received, 6.00 MiB sent"
+	var rxVal, txVal float64
+	var rxUnit, txUnit string
+	fmt.Sscanf(s, "%f %s received, %f %s sent", &rxVal, &rxUnit, &txVal, &txUnit)
+	c.RxBytes = toBytes(rxVal, rxUnit)
+	c.TxBytes = toBytes(txVal, txUnit)
+}
+
+func toBytes(val float64, unit string) int64 {
+	switch strings.ToLower(strings.TrimSuffix(unit, ",")) {
+	case "kib":
+		return int64(val * 1024)
+	case "mib":
+		return int64(val * 1024 * 1024)
+	case "gib":
+		return int64(val * 1024 * 1024 * 1024)
+	case "b":
+		return int64(val)
+	}
+	return int64(val)
 }
 
 // Connect activates a WireGuard connection by name.
