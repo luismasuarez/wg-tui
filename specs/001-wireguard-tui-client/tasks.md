@@ -15,9 +15,9 @@
 
 **Purpose**: Inicializar proyecto Go con módulos y estructura de directorios.
 
-- [ ] T001 Inicializar módulo Go: `go mod init github.com/user/wg-tui` y crear estructura de directorios (`internal/nmcli`, `internal/wg`, `internal/qr`, `ui/`) en `go.mod`, `main.go`
-- [ ] T002 [P] Agregar dependencias: `go get github.com/charmbracelet/bubbletea github.com/charmbracelet/lipgloss github.com/skip2/go-qrcode golang.zx2c4.com/wireguard/wgctrl` en `go.mod`, `go.sum`
-- [ ] T003 [P] Crear `Makefile` con targets: `build`, `install`, `test`, `lint` en `Makefile`
+- [x] T001 Inicializar módulo Go: `go mod init github.com/user/wg-tui` y crear estructura de directorios (`internal/nmcli`, `internal/wg`, `internal/qr`, `ui/`) en `go.mod`, `main.go`
+- [x] T002 [P] Agregar dependencias: `go get github.com/charmbracelet/bubbletea github.com/charmbracelet/lipgloss github.com/skip2/go-qrcode golang.zx2c4.com/wireguard/wgctrl` en `go.mod`, `go.sum`
+- [x] T003 [P] Crear `Makefile` con targets: `build`, `install`, `test`, `lint` en `Makefile`
 
 **Checkpoint**: `go build ./...` compila sin errores.
 
@@ -29,13 +29,13 @@
 
 **⚠️ CRÍTICO**: Las fases siguientes dependen de esta.
 
-- [ ] T004 Definir tipo `Connection` y parsear `nmcli -t -f NAME,TYPE,STATE connection show` en `internal/nmcli/client.go`
-- [ ] T005 Implementar `ListConnections() ([]Connection, error)` que filtra por tipo `wireguard` en `internal/nmcli/client.go`
-- [ ] T006 [P] Unit tests para parseo de stdout de nmcli (tabla con casos: activa, inactiva, sin resultados, error) en `internal/nmcli/client_test.go`
-- [ ] T007 Implementar `Connect(name string) error` y `Disconnect(name string) error` via `nmcli connection up/down` en `internal/nmcli/client.go`
-- [ ] T008 [P] Implementar chequeo de precondiciones al arranque: nmcli en PATH y NetworkManager activo, salir con mensaje claro a stderr si falla, en `internal/nmcli/client.go`
-- [ ] T009 Implementar modelo Bubble Tea base: `Model` struct con `viewState`, lista de conexiones, mensaje de estado; `Init()`, `Update()`, `View()` esqueleto en `ui/model.go`
-- [ ] T010 [P] Definir keybindings (`ui/keys.go`) y barra de ayuda con `lipgloss` en `ui/keys.go`
+- [x] T004 Definir tipo `Connection` y parsear `nmcli -t -f NAME,TYPE,STATE connection show` en `internal/nmcli/client.go`
+- [x] T005 Implementar `ListConnections() ([]Connection, error)` que filtra por tipo `wireguard` en `internal/nmcli/client.go`
+- [x] T006 [P] Unit tests para parseo de stdout de nmcli (tabla con casos: activa, inactiva, sin resultados, error) en `internal/nmcli/client_test.go`
+- [x] T007 Implementar `Connect(name string) error` y `Disconnect(name string) error` via `nmcli connection up/down` en `internal/nmcli/client.go`
+- [x] T008 [P] Implementar chequeo de precondiciones al arranque: nmcli en PATH y NetworkManager activo, salir con mensaje claro a stderr si falla, en `internal/nmcli/client.go`
+- [x] T009 Implementar modelo Bubble Tea base: `Model` struct con `viewState`, lista de conexiones, mensaje de estado; `Init()`, `Update()`, `View()` esqueleto en `ui/model.go`
+- [x] T010 [P] Definir keybindings (`ui/keys.go`) y barra de ayuda con `lipgloss` en `ui/keys.go`
 
 **Checkpoint**: `go test ./internal/nmcli/...` pasa; `go run main.go` arranca y muestra error claro si no hay nmcli.
 
@@ -47,11 +47,11 @@
 
 **Independent Test**: Con ≥2 perfiles WireGuard en NM, el usuario puede cambiar entre ellos con el teclado.
 
-- [ ] T011 [US1] Implementar vista lista: renderizar conexiones con estado activa/inactiva, indicador de selección, usando `lipgloss` en `ui/list.go`
-- [ ] T012 [US1] Conectar teclas `↑↓`/`jk` a navegación en lista; `Enter` dispara `Connect`; `d` dispara `Disconnect` en `ui/model.go`
-- [ ] T013 [US1] Mostrar mensaje de estado/error inline en la lista (ej. "Conectando…", "Error: …") en `ui/model.go`, `ui/list.go`
-- [ ] T014 [US1] Implementar refresh periódico con `tea.Tick` cada 3s que relanza `ListConnections` en `ui/model.go`
-- [ ] T015 [US1] Completar `main.go`: chequear precondiciones, cargar lista inicial, arrancar `tea.NewProgram` en `main.go`
+- [x] T011 [US1] Implementar vista lista: renderizar conexiones con estado activa/inactiva, indicador de selección, usando `lipgloss` en `ui/list.go`
+- [x] T012 [US1] Conectar teclas `↑↓`/`jk` a navegación en lista; `Enter` dispara `Connect`; `d` dispara `Disconnect` en `ui/model.go`
+- [x] T013 [US1] Mostrar mensaje de estado/error inline en la lista (ej. "Conectando…", "Error: …") en `ui/model.go`, `ui/list.go`
+- [x] T014 [US1] Implementar refresh periódico con `tea.Tick` cada 3s que relanza `ListConnections` en `ui/model.go`
+- [x] T015 [US1] Completar `main.go`: chequear precondiciones, cargar lista inicial, arrancar `tea.NewProgram` en `main.go`
 
 **Checkpoint**: `wg-tui` muestra lista real desde NM; Enter/d conectan y desconectan; estado se actualiza en pantalla.
 
@@ -63,9 +63,9 @@
 
 **Independent Test**: Con una conexión activa, el usuario ve métricas tras pulsar `i`.
 
-- [ ] T016 [US2] Implementar `GetDetails(name string) (Connection, error)` que parsea campos extendidos de nmcli en `internal/nmcli/client.go`
-- [ ] T017 [US2] Implementar vista detalle: renderizar todos los campos de `Connection` con formato legible en `ui/detail.go`
-- [ ] T018 [US2] Conectar tecla `i` para cambiar a `viewDetail`; `Esc` para volver a `viewList` en `ui/model.go`
+- [x] T016 [US2] Implementar `GetDetails(name string) (Connection, error)` que parsea campos extendidos de nmcli en `internal/nmcli/client.go`
+- [x] T017 [US2] Implementar vista detalle: renderizar todos los campos de `Connection` con formato legible en `ui/detail.go`
+- [x] T018 [US2] Conectar tecla `i` para cambiar a `viewDetail`; `Esc` para volver a `viewList` en `ui/model.go`
 
 **Checkpoint**: Pulsar `i` sobre cualquier conexión muestra el panel de detalles.
 
@@ -77,10 +77,10 @@
 
 **Independent Test**: El QR generado puede escanearse con la app oficial de WireGuard.
 
-- [ ] T019 [US3] Implementar `BuildConfig(c Connection) string` que genera el texto `.conf` WireGuard estándar en `internal/qr/render.go`
-- [ ] T020 [US3] Implementar `RenderQR(config string) string` usando `skip2/go-qrcode` con `ToSmallString` en `internal/qr/render.go`
-- [ ] T021 [US3] Implementar vista QR: mostrar el QR centrado con instrucción "Esc para volver" en `ui/qr.go`
-- [ ] T022 [US3] Conectar tecla `q` (en lista y detalle) para cambiar a `viewQR`; `Esc` para volver en `ui/model.go`
+- [x] T019 [US3] Implementar `BuildConfig(c Connection) string` que genera el texto `.conf` WireGuard estándar en `internal/qr/render.go`
+- [x] T020 [US3] Implementar `RenderQR(config string) string` usando `skip2/go-qrcode` con `ToSmallString` en `internal/qr/render.go`
+- [x] T021 [US3] Implementar vista QR: mostrar el QR centrado con instrucción "Esc para volver" en `ui/qr.go`
+- [x] T022 [US3] Conectar tecla `q` (en lista y detalle) para cambiar a `viewQR`; `Esc` para volver en `ui/model.go`
 
 **Checkpoint**: Pulsar `q` muestra el QR; escaneable con WireGuard para iOS/Android.
 
@@ -92,11 +92,11 @@
 
 **Independent Test**: Se puede crear un perfil nuevo en NM desde la TUI.
 
-- [ ] T023 [US4] Implementar `GenerateKeypair() (priv, pub string, err error)` usando `wgctrl/wgtypes` en `internal/wg/keygen.go`
-- [ ] T024 [US4] Implementar `AddConnection(form NewPeerForm, privKey string) error` via `nmcli connection add` en `internal/nmcli/client.go`
-- [ ] T025 [US4] Implementar vista formulario: campos Name, Endpoint, ServerPublicKey, AssignedIP, PresharedKey (opcional), validación inline en `ui/form.go`
-- [ ] T026 [US4] Conectar tecla `a` para abrir formulario; `Tab` navega campos; `Enter` en último campo confirma; `Esc` cancela en `ui/model.go`
-- [ ] T027 [US4] Al confirmar: generar keypair, llamar `AddConnection`, mostrar clave pública generada para compartir con el servidor en `ui/model.go`
+- [x] T023 [US4] Implementar `GenerateKeypair() (priv, pub string, err error)` usando `wgctrl/wgtypes` en `internal/wg/keygen.go`
+- [x] T024 [US4] Implementar `AddConnection(form NewPeerForm, privKey string) error` via `nmcli connection add` en `internal/nmcli/client.go`
+- [x] T025 [US4] Implementar vista formulario: campos Name, Endpoint, ServerPublicKey, AssignedIP, PresharedKey (opcional), validación inline en `ui/form.go`
+- [x] T026 [US4] Conectar tecla `a` para abrir formulario; `Tab` navega campos; `Enter` en último campo confirma; `Esc` cancela en `ui/model.go`
+- [x] T027 [US4] Al confirmar: generar keypair, llamar `AddConnection`, mostrar clave pública generada para compartir con el servidor en `ui/model.go`
 
 **Checkpoint**: Desde la TUI se puede crear un perfil que aparece en `nmcli connection show`.
 
@@ -108,10 +108,10 @@
 
 **Independent Test**: Un perfil existente puede eliminarse y desaparece de la lista.
 
-- [ ] T028 [US5] Implementar `DeleteConnection(name string) error` via `nmcli connection delete` en `internal/nmcli/client.go`
-- [ ] T029 [US5] Implementar vista confirmación: mostrar "¿Eliminar <nombre>? [y/n]" en `ui/model.go`
-- [ ] T030 [US5] Conectar tecla `x` para pedir confirmación; `y` confirma y ejecuta delete + refresca lista; `n`/`Esc` cancela en `ui/model.go`
-- [ ] T031 [US5] Si la conexión está activa, desconectar antes de eliminar en `ui/model.go`
+- [x] T028 [US5] Implementar `DeleteConnection(name string) error` via `nmcli connection delete` en `internal/nmcli/client.go`
+- [x] T029 [US5] Implementar vista confirmación: mostrar "¿Eliminar <nombre>? [y/n]" en `ui/model.go`
+- [x] T030 [US5] Conectar tecla `x` para pedir confirmación; `y` confirma y ejecuta delete + refresca lista; `n`/`Esc` cancela en `ui/model.go`
+- [x] T031 [US5] Si la conexión está activa, desconectar antes de eliminar en `ui/model.go`
 
 **Checkpoint**: Pulsar `x` + `y` elimina el perfil; ya no aparece en la lista.
 
@@ -121,11 +121,11 @@
 
 **Purpose**: Distribución, ayuda y refinamiento final.
 
-- [ ] T032 [P] Crear `install.sh`: descarga binario del release de GitHub y lo coloca en `~/.local/bin/wg-tui` en `install.sh`
-- [ ] T033 [P] Agregar `--version` flag con versión embebida via `-ldflags` en `main.go`
-- [ ] T034 [P] Implementar vista de ayuda (`?`) que muestra tabla de keybindings en `ui/model.go`, `ui/keys.go`
-- [ ] T035 Manejar redimensionado de terminal (`tea.WindowSizeMsg`) y mínimo 80×24 en `ui/model.go`
-- [ ] T036 Compilar binario estático release: `CGO_ENABLED=0 go build -ldflags="-s -w"` y verificar tamaño <10MB en `Makefile`
+- [x] T032 [P] Crear `install.sh`: descarga binario del release de GitHub y lo coloca en `~/.local/bin/wg-tui` en `install.sh`
+- [x] T033 [P] Agregar `--version` flag con versión embebida via `-ldflags` en `main.go`
+- [x] T034 [P] Implementar vista de ayuda (`?`) que muestra tabla de keybindings en `ui/model.go`, `ui/keys.go`
+- [x] T035 Manejar redimensionado de terminal (`tea.WindowSizeMsg`) y mínimo 80×24 en `ui/model.go`
+- [x] T036 Compilar binario estático release: `CGO_ENABLED=0 go build -ldflags="-s -w"` y verificar tamaño <10MB en `Makefile`
 
 ---
 

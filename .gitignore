@@ -1,0 +1,5 @@
+wg-tui
+*.exe
+*.test
+*.out
+vendor/
