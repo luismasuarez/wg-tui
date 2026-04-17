@@ -21,4 +21,10 @@ mkdir -p "$DEST"
 curl -fsSL "$URL" -o "${DEST}/${BIN}"
 chmod +x "${DEST}/${BIN}"
 echo "Instalado en ${DEST}/${BIN}"
-echo "Asegúrate de que ${DEST} esté en tu PATH."
+
+# Copiar a /usr/local/bin para que funcione con sudo
+if command -v sudo >/dev/null 2>&1; then
+    sudo cp "${DEST}/${BIN}" /usr/local/bin/${BIN}
+    echo "Copiado a /usr/local/bin/${BIN} (disponible con sudo)"
+fi
+echo "Uso: sudo wg-tui"
